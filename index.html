@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flashcard Master</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <div class="header">
+            <h1>Flashcard Master </h1>
+            <button class="theme-toggle" id="theme-toggle">
+                <i class="fas fa-moon"></i>
+            </button>
+        </div>
+
+        <div class="progress-container">
+            <div class="progress-top">
+                <span id="cards-remaining">0/0 cards</span>
+                <span id="mastery-percent">0% Mastery</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+            <div class="progress-stats">
+                <div class="stat-item">
+                    <i class="fas fa-fire stat-icon"></i>
+                    <span id="streak-count">0 day streak</span>
+                </div>
+                <div class="stat-item">
+                    <i class="fas fa-check-circle stat-icon"></i>
+                    <span id="known-count">0 mastered</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="flashcard-container">
+            <div class="flashcard" id="flashcard">
+                <div class="flashcard-face flashcard-front">
+                    <div class="flashcard-content" id="card-front">
+                        Loading cards...
+                    </div>
+                    <div class="flip-hint">
+                        <i class="fas fa-hand-pointer"></i> Click or tap to flip
+                    </div>
+                </div>
+                <div class="flashcard-face flashcard-back">
+                    <span class="flashcard-category" id="card-category">General</span>
+                    <div class="flashcard-content" id="card-back">
+                        Flip to see answer
+                    </div>
+                    <div class="flashcard-note" id="card-note">
+                        Additional notes appear here
+                    </div>
+                </div>
+            </div>
+            
+            <div class="navigation-controls">
+                <button class="nav-btn" id="prev-btn">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <span class="card-position" id="card-position">1/10</span>
+                <button class="nav-btn" id="next-btn">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="action-buttons">
+            <button class="btn btn-dont-know" id="dont-know-btn">
+                <i class="fas fa-times"></i> Don't Know
+            </button>
+            <button class="btn btn-know" id="know-btn">
+                <i class="fas fa-check"></i> Know It
+            </button>
+            <button class="btn btn-shuffle" id="shuffle-btn">
+                <i class="fas fa-random"></i> Shuffle
+            </button>
+            <button class="btn btn-settings" id="settings-btn">
+                <i class="fas fa-cog"></i> Settings
+            </button>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card" id="session-stat">
+                <div class="stat-label">Today's Reviews</div>
+                <div class="stat-value" id="session-count">0</div>
+            </div>
+            <div class="stat-card" id="retention-stat">
+                <div class="stat-label">Retention Rate</div>
+                <div class="stat-value" id="retention-rate">0%</div>
+            </div>
+            <div class="stat-card" id="total-stat">
+                <div class="stat-label">Total Cards</div>
+                <div class="stat-value" id="total-cards">0</div>
+            </div>
+            <div class="stat-card" id="time-stat">
+                <div class="stat-label">Study Time</div>
+                <div class="stat-value" id="study-time">0m</div>
+            </div>
+        </div>
+    </div>
+
+    <button class="fab" id="fab-menu">
+        <i class="fas fa-ellipsis-h"></i>
+    </button>
+
+    <div class="deck-selector" id="deck-selector">
+        <div class="deck-option" data-deck="all">
+            <i class="fas fa-layer-group"></i> All Cards
+        </div>
+        <div class="deck-option" data-deck="programming">
+            <i class="fas fa-code"></i> Programming
+        </div>
+        <div class="deck-option" data-deck="science">
+            <i class="fas fa-atom"></i> Science
+        </div>
+        <div class="deck-option" data-deck="geography">
+            <i class="fas fa-globe-americas"></i> Geography
+        </div>
+        <div class="deck-option" data-deck="custom">
+            <i class="fas fa-plus-circle"></i> Create New Deck
+        </div>
+    </div>
+
+    <div class="notification" id="notification">
+        <i class="fas fa-check-circle"></i>
+        <span id="notification-text">Notification message</span>
+    </div>
+
+    <div class="settings-modal" id="settings-modal">
+        <div class="settings-content">
+            <button class="close-settings" id="close-settings">
+                <i class="fas fa-times"></i>
+            </button>
+            <h2 class="settings-title">Settings</h2>
+            
+            <div class="setting-group">
+                <label class="setting-label">Card Flip Animation</label>
+                <select class="setting-control" id="flip-animation">
+                    <option value="3d">3D Flip</option>
+                    <option value="fade">Fade</option>
+                    <option value="slide">Slide</option>
+                </select>
+            </div>
+            
+            <div class="setting-group">
+                <label class="setting-label">Study Timer</label>
+                <div class="toggle-switch">
+                    <input type="checkbox" id="study-timer" checked>
+                    <span class="toggle-slider"></span>
+                </div>
+            </div>
+            
+            <div class="setting-group">
+                <label class="setting-label">Text-to-Speech</label>
+                <div class="toggle-switch">
+                    <input type="checkbox" id="text-to-speech">
+                    <span class="toggle-slider"></span>
+                </div>
+            </div>
+            
+            <div class="setting-group">
+                <label class="setting-label">Default Deck</label>
+                <select class="setting-control" id="default-deck">
+                    <option value="all">All Cards</option>
+                    <option value="programming">Programming</option>
+                    <option value="science">Science</option>
+                    <option value="geography">Geography</option>
+                </select>
+            </div>
+            
+            <button class="btn btn-know" id="save-settings" style="width: 100%; margin-top: 20px;">
+                <i class="fas fa-save"></i> Save Settings
+            </button>
+        </div>
+    </div>
+
+    <canvas id="confetti-canvas"></canvas>
+
+    <script src="script.js"></script>
+</body>
+</html>
