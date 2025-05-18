@@ -1,0 +1,1642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flashcard Master</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #6c5ce7;
+            --primary-dark: #5649c0;
+            --success: #00b894;
+            --success-dark: #00a884;
+            --danger: #d63031;
+            --danger-dark: #c0392b;
+            --warning: #fdcb6e;
+            --light: #f8f9fa;
+            --dark: #2d3436;
+            --gray: #636e72;
+            --border-radius: 16px;
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            --transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            --card-gradient: linear-gradient(145deg, #ffffff, #f8f9fa);
+        }
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        html {
+            scroll-behavior: smooth;
+        }
+        body {
+            font-family: 'Poppins', 'Segoe UI', system-ui, sans-serif;
+            background-color: #f1faee;
+            color: var(--dark);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+            transition: background-color 0.4s ease;
+            line-height: 1.6;
+        }
+        body.dark-mode {
+            background-color: #121212;
+            color: #f0f0f0;
+            --card-gradient: linear-gradient(145deg, #2d2d2d, #3d3d3d);
+        }
+        .app-container {
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            position: relative;
+            z-index: 10;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-radius: var(--border-radius);
+            padding: 30px;
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            animation: fadeIn 0.8s ease-out;
+        }
+        body.dark-mode .app-container {
+            background: rgba(30, 30, 30, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .header h1 {
+            font-size: 2.4rem;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark), #a29bfe);
+            background-size: 300% 300%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradientShift 8s ease infinite;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        .progress-container {
+            background: rgba(255, 255, 255, 0.7);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            transition: var(--transition);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        body.dark-mode .progress-container {
+            background: rgba(40, 40, 40, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .progress-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .progress-bar {
+            height: 12px;
+            background-color: rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+            position: relative;
+        }
+        body.dark-mode .progress-bar {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--success));
+            width: 0%;
+            transition: width 0.8s ease, background 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(
+                90deg,
+                rgba(255, 255, 255, 0.2) 0%,
+                rgba(255, 255, 255, 0.5) 50%,
+                rgba(255, 255, 255, 0.2) 100%
+            );
+            animation: shimmer 2.5s infinite linear;
+        }
+        .flashcard-container {
+            perspective: 2000px;
+            width: 100%;
+            height: 380px;
+            position: relative;
+        }
+        .flashcard {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+            cursor: pointer;
+            border-radius: var(--border-radius);
+            box-shadow: 0 15px 45px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+        .flashcard.flipped {
+            transform: rotateY(180deg);
+        }
+        .flashcard-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            flex-direction: column;
+            padding: 30px;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            background: var(--card-gradient);
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+        .flashcard-front {
+            transform: rotateY(0deg);
+            z-index: 2;
+        }
+        .flashcard-back {
+            transform: rotateY(180deg);
+        }
+        .flashcard-content {
+            font-size: 2rem;
+            font-weight: 600;
+            color: inherit;
+            line-height: 1.4;
+            margin-bottom: 20px;
+            transition: var(--transition);
+            width: 100%;
+            padding: 0 20px;
+        }
+        .flashcard-category {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: var(--primary);
+            color: white;
+            padding: 6px 15px;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 15px rgba(108, 92, 231, 0.3);
+            z-index: 3;
+        }
+        .flashcard-note {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 15px;
+            border-radius: 12px;
+            margin-top: 20px;
+            font-size: 1rem;
+            color: var(--dark);
+            border-left: 4px solid var(--primary);
+            width: 100%;
+            max-width: 600px;
+            transition: var(--transition);
+        }
+        body.dark-mode .flashcard-note {
+            background: rgba(0, 0, 0, 0.3);
+            color: #f0f0f0;
+        }
+        .navigation-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+        }
+        .nav-btn {
+            background: rgba(0, 0, 0, 0.05);
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition);
+            color: var(--dark);
+            font-size: 1.2rem;
+        }
+        body.dark-mode .nav-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: #f0f0f0;
+        }
+        .nav-btn:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(108, 92, 231, 0.4);
+        }
+        .card-position {
+            font-size: 0.9rem;
+            color: var(--gray);
+            font-weight: 500;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 40px;
+        }
+        .btn {
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 180px;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+        }
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+        }
+
+        .card-position {
+            
+            font-size: 0.9rem;
+            color: var(--gray);
+            font-weight: 500;
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 40px;
+        
+        }
+
+        .btn {
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 180px;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(rgba(255, 255, 255, 0.2), transparent);
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .btn:hover::before {
+            opacity: 1;
+        }
+
+        .btn-know {
+            background: linear-gradient(135deg, var(--success), var(--success-dark));
+            color: white;
+        }
+
+        .btn-dont-know {
+            background: linear-gradient(135deg, var(--danger), var(--danger-dark));
+            color: white;
+        }
+
+        .btn-settings {
+            background: linear-gradient(135deg, var(--warning), #e17055);
+            color: white;
+        }
+
+        .btn-shuffle {
+            background: linear-gradient(135deg, #a29bfe, #6c5ce7);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.7);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            text-align: center;
+            transition: var(--transition);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            cursor: pointer;
+        }
+
+        body.dark-mode .stat-card {
+            background: rgba(40, 40, 40, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .stat-value {
+            font-size: 2.2rem;
+            font-weight: bold;
+            margin: 10px 0;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: inline-block;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--gray);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        /* Floating Action Button */
+        .fab {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            box-shadow: 0 10px 30px rgba(108, 92, 231, 0.4);
+            cursor: pointer;
+            transition: var(--transition);
+            z-index: 100;
+            border: none;
+            outline: none;
+        }
+
+        .fab:hover {
+            transform: scale(1.1) rotate(90deg);
+            box-shadow: 0 15px 40px rgba(108, 92, 231, 0.6);
+        }
+
+        /* Deck Selector */
+        .deck-selector {
+            position: fixed;
+            bottom: 100px;
+            right: 30px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 20px;
+            transform: translateY(20px) scale(0.9);
+            opacity: 0;
+            visibility: hidden;
+            transition: var(--transition);
+            z-index: 99;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            width: 280px;
+        }
+
+        body.dark-mode .deck-selector {
+            background: rgba(40, 40, 40, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .deck-selector.show {
+            transform: translateY(0) scale(1);
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .deck-option {
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 5px 0;
+            transition: background-color 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 500;
+        }
+
+        .deck-option:hover {
+            background-color: rgba(108, 92, 231, 0.1);
+        }
+
+        body.dark-mode .deck-option:hover {
+            background-color: rgba(108, 92, 231, 0.2);
+        }
+
+        .deck-option i {
+            width: 24px;
+            text-align: center;
+            font-size: 1.1rem;
+        }
+
+        /* Notification System */
+        .notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: var(--primary);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 50px;
+            box-shadow: 0 15px 35px rgba(108, 92, 231, 0.3);
+            z-index: 1001;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            max-width: 90%;
+            text-align: center;
+        }
+
+        .notification.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .notification i {
+            font-size: 1.3rem;
+        }
+
+        /* Flip Hint */
+        .flip-hint {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            opacity: 0;
+            transition: opacity 0.4s;
+            pointer-events: none;
+            backdrop-filter: blur(5px);
+        }
+
+        .flashcard-container:hover .flip-hint {
+            opacity: 1;
+        }
+
+        /* Settings Modal */
+        .settings-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: var(--transition);
+        }
+
+        .settings-modal.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .settings-content {
+            background: white;
+            width: 90%;
+            max-width: 500px;
+            border-radius: var(--border-radius);
+            padding: 30px;
+            box-shadow: var(--shadow);
+            transform: translateY(20px);
+            transition: var(--transition);
+            position: relative;
+        }
+
+        body.dark-mode .settings-content {
+            background: #2d2d2d;
+        }
+
+        .settings-modal.show .settings-content {
+            transform: translateY(0);
+        }
+
+        .close-settings {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--gray);
+        }
+
+        .settings-title {
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .setting-group {
+            margin-bottom: 20px;
+        }
+
+        .setting-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .setting-control {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            background: rgba(0, 0, 0, 0.05);
+            font-size: 1rem;
+        }
+
+        body.dark-mode .setting-control {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        /* Toggle Switch */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider {
+            background-color: var(--primary);
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(26px);
+        }
+
+        /* Difficulty Indicator */
+        .difficulty-indicator {
+            margin-left: 5px;
+            font-size: 0.8em;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .app-container {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .flashcard-container {
+                height: 350px;
+            }
+
+            .flashcard-content {
+                font-size: 1.8rem;
+            }
+
+            .btn {
+                padding: 12px 24px;
+                min-width: 160px;
+                font-size: 1rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 15px;
+            }
+
+            .app-container {
+                padding: 15px;
+                gap: 20px;
+            }
+
+            .flashcard-container {
+                height: 300px;
+            }
+
+            .flashcard-content {
+                font-size: 1.5rem;
+            }
+
+            .flashcard-note {
+                font-size: 0.9rem;
+                padding: 12px;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <div class="header">
+            <h1>Flashcard Master </h1>
+            <button class="theme-toggle" id="theme-toggle">
+                <i class="fas fa-moon"></i>
+            </button>
+        </div>
+
+        <div class="progress-container">
+            <div class="progress-top">
+                <span id="cards-remaining">0/0 cards</span>
+                <span id="mastery-percent">0% Mastery</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+            <div class="progress-stats">
+                <div class="stat-item">
+                    <i class="fas fa-fire stat-icon"></i>
+                    <span id="streak-count">0 day streak</span>
+                </div>
+                <div class="stat-item">
+                    <i class="fas fa-check-circle stat-icon"></i>
+                    <span id="known-count">0 mastered</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="flashcard-container">
+            <div class="flashcard" id="flashcard">
+                <div class="flashcard-face flashcard-front">
+                    <div class="flashcard-content" id="card-front">
+                        Loading cards...
+                    </div>
+                    <div class="flip-hint">
+                        <i class="fas fa-hand-pointer"></i> Click or tap to flip
+                    </div>
+                </div>
+                <div class="flashcard-face flashcard-back">
+                    <span class="flashcard-category" id="card-category">General</span>
+                    <div class="flashcard-content" id="card-back">
+                        Flip to see answer
+                    </div>
+                    <div class="flashcard-note" id="card-note">
+                        Additional notes appear here
+                    </div>
+                </div>
+            </div>
+            
+            <div class="navigation-controls">
+                <button class="nav-btn" id="prev-btn">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <span class="card-position" id="card-position">1/10</span>
+                <button class="nav-btn" id="next-btn">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="action-buttons">
+            <button class="btn btn-dont-know" id="dont-know-btn">
+                <i class="fas fa-times"></i> Don't Know
+            </button>
+            <button class="btn btn-know" id="know-btn">
+                <i class="fas fa-check"></i> Know It
+            </button>
+            <button class="btn btn-shuffle" id="shuffle-btn">
+                <i class="fas fa-random"></i> Shuffle
+            </button>
+            <button class="btn btn-settings" id="settings-btn">
+                <i class="fas fa-cog"></i> Settings
+            </button>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card" id="session-stat">
+                <div class="stat-label">Today's Reviews</div>
+                <div class="stat-value" id="session-count">0</div>
+            </div>
+            <div class="stat-card" id="retention-stat">
+                <div class="stat-label">Retention Rate</div>
+                <div class="stat-value" id="retention-rate">0%</div>
+            </div>
+            <div class="stat-card" id="total-stat">
+                <div class="stat-label">Total Cards</div>
+                <div class="stat-value" id="total-cards">0</div>
+            </div>
+            <div class="stat-card" id="time-stat">
+                <div class="stat-label">Study Time</div>
+                <div class="stat-value" id="study-time">0m</div>
+            </div>
+        </div>
+    </div>
+
+    <button class="fab" id="fab-menu">
+        <i class="fas fa-ellipsis-h"></i>
+    </button>
+
+    <div class="deck-selector" id="deck-selector">
+        <div class="deck-option" data-deck="all">
+            <i class="fas fa-layer-group"></i> All Cards
+        </div>
+        <div class="deck-option" data-deck="programming">
+            <i class="fas fa-code"></i> Programming
+        </div>
+        <div class="deck-option" data-deck="science">
+            <i class="fas fa-atom"></i> Science
+        </div>
+        <div class="deck-option" data-deck="geography">
+            <i class="fas fa-globe-americas"></i> Geography
+        </div>
+        <div class="deck-option" data-deck="custom">
+            <i class="fas fa-plus-circle"></i> Create New Deck
+        </div>
+    </div>
+
+    <div class="notification" id="notification">
+        <i class="fas fa-check-circle"></i>
+        <span id="notification-text">Notification message</span>
+    </div>
+
+    <div class="settings-modal" id="settings-modal">
+        <div class="settings-content">
+            <button class="close-settings" id="close-settings">
+                <i class="fas fa-times"></i>
+            </button>
+            <h2 class="settings-title">Settings</h2>
+            
+            <div class="setting-group">
+                <label class="setting-label">Card Flip Animation</label>
+                <select class="setting-control" id="flip-animation">
+                    <option value="3d">3D Flip</option>
+                    <option value="fade">Fade</option>
+                    <option value="slide">Slide</option>
+                </select>
+            </div>
+            
+            <div class="setting-group">
+                <label class="setting-label">Study Timer</label>
+                <div class="toggle-switch">
+                    <input type="checkbox" id="study-timer" checked>
+                    <span class="toggle-slider"></span>
+                </div>
+            </div>
+            
+            <div class="setting-group">
+                <label class="setting-label">Text-to-Speech</label>
+                <div class="toggle-switch">
+                    <input type="checkbox" id="text-to-speech">
+                    <span class="toggle-slider"></span>
+                </div>
+            </div>
+            
+            <div class="setting-group">
+                <label class="setting-label">Default Deck</label>
+                <select class="setting-control" id="default-deck">
+                    <option value="all">All Cards</option>
+                    <option value="programming">Programming</option>
+                    <option value="science">Science</option>
+                    <option value="geography">Geography</option>
+                </select>
+            </div>
+            
+            <button class="btn btn-know" id="save-settings" style="width: 100%; margin-top: 20px;">
+                <i class="fas fa-save"></i> Save Settings
+            </button>
+        </div>
+    </div>
+
+    <canvas id="confetti-canvas"></canvas>
+
+    <script>
+        // ======================
+        // Enhanced Flashcard Data
+        // ======================
+        const flashcardDecks = {
+            all: [
+                {
+                    front: "What is the capital of France?",
+                    back: "Paris",
+                    category: "Geography",
+                    note: "France is located in Western Europe",
+                    difficulty: "easy"
+                },
+                {
+                    front: "What is the largest planet in our solar system?",
+                    back: "Jupiter",
+                    category: "Science",
+                    note: "Jupiter's mass is 2.5x that of all other planets combined",
+                    difficulty: "easy"
+                },
+                {
+                    front: "What year was JavaScript created?",
+                    back: "1995",
+                    category: "Programming",
+                    note: "Created by Brendan Eich in just 10 days",
+                    difficulty: "medium"
+                },
+                {
+                    front: "What does HTML stand for?",
+                    back: "HyperText Markup Language",
+                    category: "Programming",
+                    note: "First version created by Tim Berners-Lee in 1991",
+                    difficulty: "easy"
+                },
+                {
+                    front: "Who painted the Mona Lisa?",
+                    back: "Leonardo da Vinci",
+                    category: "Art",
+                    note: "Painted between 1503 and 1519",
+                    difficulty: "easy"
+                },
+                {
+                    front: "What is the chemical symbol for gold?",
+                    back: "Au",
+                    category: "Science",
+                    note: "From Latin 'aurum' meaning 'shining dawn'",
+                    difficulty: "easy"
+                },
+                {
+                    front: "What is React?",
+                    back: "A JavaScript library for building user interfaces",
+                    category: "Programming",
+                    note: "Maintained by Facebook and a community of developers",
+                    difficulty: "medium"
+                },
+                {
+                    front: "What is a closure in JavaScript?",
+                    back: "A function with access to its lexical scope",
+                    category: "Programming",
+                    note: "Closures are created every time a function is created",
+                    difficulty: "hard"
+                },
+                {
+                    front: "What is the Big O notation for binary search?",
+                    back: "O(log n)",
+                    category: "Programming",
+                    note: "Binary search works by repeatedly dividing the search interval in half",
+                    difficulty: "hard"
+                }
+            ],
+            programming: [
+                {
+                    front: "What is JavaScript?",
+                    back: "A programming language for the web",
+                    category: "Programming",
+                    note: "Not to be confused with Java",
+                    difficulty: "easy"
+                },
+                {
+                    front: "What is a closure?",
+                    back: "A function with access to its own scope + outer function's scope",
+                    category: "Programming",
+                    note: "Important concept in functional programming",
+                    difficulty: "hard"
+                },
+                {
+                    front: "What is CSS Flexbox?",
+                    back: "A layout model for responsive designs",
+                    category: "Programming",
+                    note: "Introduced in CSS3",
+                    difficulty: "medium"
+                },
+                {
+                    front: "What does API stand for?",
+                    back: "Application Programming Interface",
+                    category: "Programming",
+                    note: "Allows different software to communicate",
+                    difficulty: "medium"
+                },
+                {
+                    front: "What is the virtual DOM?",
+                    back: "A lightweight copy of the real DOM",
+                    category: "Programming",
+                    note: "Used by React to optimize updates",
+                    difficulty: "hard"
+                }
+            ],
+            science: [
+                {
+                    front: "What is the chemical symbol for water?",
+                    back: "H₂O",
+                    category: "Science",
+                    note: "Two hydrogen atoms and one oxygen atom",
+                    difficulty: "easy"
+                },
+                {
+                    front: "What is the powerhouse of the cell?",
+                    back: "Mitochondria",
+                    category: "Science",
+                    note: "Generates most of the cell's ATP",
+                    difficulty: "easy"
+                },
+                {
+                    front: "What is Newton's first law?",
+                    back: "An object in motion stays in motion",
+                    category: "Science",
+                    note: "Also called the law of inertia",
+                    difficulty: "medium"
+                },
+                {
+                    front: "What is photosynthesis?",
+                    back: "Process plants use to convert light energy to chemical energy",
+                    category: "Science",
+                    note: "Produces oxygen as a byproduct",
+                    difficulty: "medium"
+                }
+            ],
+            geography: [
+                {
+                    front: "What is the longest river in the world?",
+                    back: "The Nile",
+                    category: "Geography",
+                    note: "Approximately 6,650 km long",
+                    difficulty: "easy"
+                },
+                {
+                    front: "What country has the most time zones?",
+                    back: "France",
+                    category: "Geography",
+                    note: "Due to its overseas territories",
+                    difficulty: "medium"
+                },
+                {
+                    front: "What is the capital of Canada?",
+                    back: "Ottawa",
+                    category: "Geography",
+                    note: "Located in the province of Ontario",
+                    difficulty: "easy"
+                },
+                {
+                    front: "Which continent is the most populous?",
+                    back: "Asia",
+                    category: "Geography",
+                    note: "Home to about 60% of the world's population",
+                    difficulty: "easy"
+                }
+            ]
+        };
+
+        // ======================
+        // App State
+        // ======================
+        let currentDeck = 'all';
+        let currentCards = [];
+        let currentCardIndex = 0;
+        let knownCards = [];
+        let streak = 0;
+        let sessionCount = 0;
+        let totalCorrect = 0;
+        let totalReviews = 0;
+        let studyTime = 0; // in seconds
+        let isFlipped = false;
+        let darkMode = false;
+        let studyTimerInterval;
+        let startTime;
+        let settings = {
+            flipAnimation: '3d',
+            studyTimer: true,
+            textToSpeech: false,
+            defaultDeck: 'all'
+        };
+
+        // ======================
+        // DOM Elements
+        // ======================
+        const flashcardElement = document.getElementById('flashcard');
+        const frontContent = document.getElementById('card-front');
+        const backContent = document.getElementById('card-back');
+        const cardCategory = document.getElementById('card-category');
+        const cardNote = document.getElementById('card-note');
+        const progressFill = document.getElementById('progress-fill');
+        const cardsRemaining = document.getElementById('cards-remaining');
+        const masteryPercent = document.getElementById('mastery-percent');
+        const streakCount = document.getElementById('streak-count');
+        const knownCount = document.getElementById('known-count');
+        const sessionCountElement = document.getElementById('session-count');
+        const retentionRateElement = document.getElementById('retention-rate');
+        const totalCardsElement = document.getElementById('total-cards');
+        const studyTimeElement = document.getElementById('study-time');
+        const knowBtn = document.getElementById('know-btn');
+        const dontKnowBtn = document.getElementById('dont-know-btn');
+        const shuffleBtn = document.getElementById('shuffle-btn');
+        const settingsBtn = document.getElementById('settings-btn');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const cardPosition = document.getElementById('card-position');
+        const themeToggle = document.getElementById('theme-toggle');
+        const fabMenu = document.getElementById('fab-menu');
+        const deckSelector = document.getElementById('deck-selector');
+        const notification = document.getElementById('notification');
+        const notificationText = document.getElementById('notification-text');
+        const settingsModal = document.getElementById('settings-modal');
+        const closeSettings = document.getElementById('close-settings');
+        const saveSettings = document.getElementById('save-settings');
+        const flipAnimationSelect = document.getElementById('flip-animation');
+        const studyTimerToggle = document.getElementById('study-timer');
+        const textToSpeechToggle = document.getElementById('text-to-speech');
+        const defaultDeckSelect = document.getElementById('default-deck');
+        const confettiCanvas = document.getElementById('confetti-canvas');
+
+        // ======================
+        // Initialization
+        // ======================
+        function init() {
+            // Load saved progress and settings
+            loadProgress();
+            loadSettings();
+            
+            // Set up event listeners
+            setupEventListeners();
+            
+            // Load the initial deck
+            loadDeck(currentDeck);
+            
+            // Start study timer if enabled
+            if (settings.studyTimer) {
+                startStudyTimer();
+            }
+            
+            // Update UI
+            updateUI();
+            
+            // Animate elements in sequence
+            animateElements();
+        }
+
+        // Set up event listeners
+        function setupEventListeners() {
+            // Card flip
+            flashcardElement.addEventListener('click', toggleFlip);
+            
+            // Know/don't know buttons
+            knowBtn.addEventListener('click', () => handleResponse(true));
+            dontKnowBtn.addEventListener('click', () => handleResponse(false));
+            
+            // Navigation buttons
+            prevBtn.addEventListener('click', showPreviousCard);
+            nextBtn.addEventListener('click', showNextCard);
+            
+            // Shuffle button
+            shuffleBtn.addEventListener('click', shuffleCurrentDeck);
+            
+            // Theme toggle
+            themeToggle.addEventListener('click', toggleTheme);
+            
+            // FAB menu
+            fabMenu.addEventListener('click', toggleDeckSelector);
+            
+            // Deck selection
+            document.querySelectorAll('.deck-option').forEach(option => {
+                option.addEventListener('click', () => {
+                    const deck = option.dataset.deck;
+                    if (deck === 'custom') {
+                        showNotification("Custom deck creation coming soon!");
+                        return;
+                    }
+                    loadDeck(deck);
+                    toggleDeckSelector();
+                    showNotification(`Switched to ${deck === 'all' ? 'all cards' : deck + ' deck'}`);
+                });
+            });
+            
+            // Settings
+            settingsBtn.addEventListener('click', openSettings);
+            closeSettings.addEventListener('click', closeSettingsModal);
+            saveSettings.addEventListener('click', saveSettingsHandler);
+            
+            // Keyboard shortcuts
+            document.addEventListener('keydown', handleKeyPress);
+        }
+
+        // ======================
+        // Core Flashcard Functions
+        // ======================
+        // Load a deck of cards
+        function loadDeck(deck) {
+            currentDeck = deck;
+            currentCards = [...flashcardDecks[deck]];
+            currentCardIndex = 0;
+            shuffleArray(currentCards);
+            updateCard();
+            updateUI();
+            
+            // Speak the first card if text-to-speech is enabled
+            if (settings.textToSpeech) {
+                speakCard();
+            }
+        }
+
+        // Toggle card flip
+        function toggleFlip() {
+            isFlipped = !isFlipped;
+            flashcardElement.classList.toggle('flipped');
+            
+            // Speak the back content if text-to-speech is enabled and card is flipped
+            if (settings.textToSpeech && isFlipped) {
+                speakText(currentCards[currentCardIndex].back);
+            }
+        }
+
+        // Show previous card
+        function showPreviousCard() {
+            if (isFlipped) {
+                flashcardElement.classList.remove('flipped');
+                isFlipped = false;
+            }
+            
+            currentCardIndex = (currentCardIndex - 1 + currentCards.length) % currentCards.length;
+            updateCard();
+            updateUI();
+            
+            if (settings.textToSpeech) {
+                speakCard();
+            }
+        }
+
+        // Show next card
+        function showNextCard() {
+            if (isFlipped) {
+                flashcardElement.classList.remove('flipped');
+                isFlipped = false;
+            }
+            
+            currentCardIndex = (currentCardIndex + 1) % currentCards.length;
+            updateCard();
+            updateUI();
+            
+            if (settings.textToSpeech) {
+                speakCard();
+            }
+        }
+
+        // Shuffle current deck
+        function shuffleCurrentDeck() {
+            shuffleArray(currentCards);
+            currentCardIndex = 0;
+            updateCard();
+            updateUI();
+            showNotification("🔀 Deck shuffled!");
+            
+            if (settings.textToSpeech) {
+                speakCard();
+            }
+        }
+
+        // Handle user response
+        function handleResponse(know) {
+            const cardId = currentCards[currentCardIndex].front;
+            const cardDifficulty = currentCards[currentCardIndex].difficulty;
+            
+            // Update stats
+            sessionCount++;
+            totalReviews++;
+            if (know) totalCorrect++;
+            
+            if (know) {
+                // Add to known cards if not already there
+                if (!knownCards.includes(cardId)) {
+                    knownCards.push(cardId);
+                    streak++;
+                    
+                    // Celebrate milestones
+                    if (streak % 5 === 0) {
+                        triggerConfetti();
+                        showNotification(`🔥 ${streak}-day streak! Keep going!`);
+                    }
+                }
+            } else {
+                // Remove from known cards if it was there
+                const index = knownCards.indexOf(cardId);
+                if (index > -1) {
+                    knownCards.splice(index, 1);
+                }
+                streak = 0;
+            }
+            
+            // Save progress
+            saveProgress();
+            
+            // Move to next card (or loop back to start)
+            showNextCard();
+        }
+
+        // Update current card display
+        function updateCard() {
+            const card = currentCards[currentCardIndex];
+            frontContent.textContent = card.front;
+            backContent.textContent = card.back;
+            cardCategory.textContent = card.category;
+            cardNote.textContent = card.note || '';
+            
+            // Add difficulty indicator
+            const difficultyIcon = card.difficulty === 'easy' ? '⭐' : 
+                                 card.difficulty === 'medium' ? '⭐⭐' : '⭐⭐⭐';
+            cardCategory.innerHTML = `${card.category} <span class="difficulty-indicator">${difficultyIcon}</span>`;
+            
+            // Update card position
+            cardPosition.textContent = `${currentCardIndex + 1}/${currentCards.length}`;
+            
+            // Reset card state
+            isFlipped = false;
+            flashcardElement.classList.remove('flipped');
+        }
+
+        // Update all progress indicators
+        function updateUI() {
+            // Calculate progress
+            const knownInDeck = currentCards.filter(card => knownCards.includes(card.front)).length;
+            const progress = (knownInDeck / currentCards.length) * 100;
+            const retentionRate = totalReviews > 0 ? Math.round((totalCorrect / totalReviews) * 100) : 0;
+            
+            // Update progress bar
+            progressFill.style.width = `${progress}%`;
+            
+            // Change progress bar color based on mastery
+            if (progress >= 80) {
+                progressFill.style.background = 'linear-gradient(90deg, var(--success), var(--success-dark))';
+            } else if (progress >= 50) {
+                progressFill.style.background = 'linear-gradient(90deg, var(--primary), var(--primary-dark))';
+            } else {
+                progressFill.style.background = 'linear-gradient(90deg, var(--danger), var(--danger-dark))';
+            }
+            
+            // Update text displays
+            cardsRemaining.textContent = `${currentCardIndex + 1}/${currentCards.length}`;
+            masteryPercent.textContent = `${Math.round(progress)}% Mastery`;
+            streakCount.textContent = `${streak} day streak`;
+            knownCount.textContent = `${knownInDeck} mastered`;
+            sessionCountElement.textContent = sessionCount;
+            retentionRateElement.textContent = `${retentionRate}%`;
+            totalCardsElement.textContent = currentCards.length;
+            
+            // Format study time
+            const minutes = Math.floor(studyTime / 60);
+            const seconds = studyTime % 60;
+            studyTimeElement.textContent = `${minutes}m ${seconds}s`;
+        }
+
+        // ======================
+        // Settings Functions
+        // ======================
+        function openSettings() {
+            settingsModal.classList.add('show');
+        }
+
+        function closeSettingsModal() {
+            settingsModal.classList.remove('show');
+        }
+
+        function saveSettingsHandler() {
+            settings.flipAnimation = flipAnimationSelect.value;
+            settings.studyTimer = studyTimerToggle.checked;
+            settings.textToSpeech = textToSpeechToggle.checked;
+            settings.defaultDeck = defaultDeckSelect.value;
+            
+            // Apply changes
+            if (settings.studyTimer && !studyTimerInterval) {
+                startStudyTimer();
+            } else if (!settings.studyTimer && studyTimerInterval) {
+                clearInterval(studyTimerInterval);
+                studyTimerInterval = null;
+            }
+            
+            // Save to localStorage
+            localStorage.setItem('flashcardSettings', JSON.stringify(settings));
+            
+            showNotification("Settings saved successfully!");
+            closeSettingsModal();
+        }
+
+        function loadSettings() {
+            const savedSettings = localStorage.getItem('flashcardSettings');
+            if (savedSettings) {
+                settings = JSON.parse(savedSettings);
+                
+                // Update UI to reflect settings
+                flipAnimationSelect.value = settings.flipAnimation;
+                studyTimerToggle.checked = settings.studyTimer;
+                textToSpeechToggle.checked = settings.textToSpeech;
+                defaultDeckSelect.value = settings.defaultDeck;
+                
+                // Set current deck from settings
+                currentDeck = settings.defaultDeck;
+            }
+        }
+
+        // ======================
+        // Study Timer
+        // ======================
+        function startStudyTimer() {
+            startTime = new Date();
+            studyTimerInterval = setInterval(() => {
+                studyTime = Math.floor((new Date() - startTime) / 1000);
+                updateUI();
+            }, 1000);
+        }
+
+        // ======================
+        // Text-to-Speech
+        // ======================
+        function speakCard() {
+            if (!settings.textToSpeech) return;
+            
+            const card = currentCards[currentCardIndex];
+            const text = isFlipped ? card.back : card.front;
+            speakText(text);
+        }
+
+        function speakText(text) {
+            if ('speechSynthesis' in window) {
+                // Cancel any ongoing speech
+                window.speechSynthesis.cancel();
+                
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.rate = 0.9;
+                utterance.pitch = 1;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        // ======================
+        // Progress Management
+        // ======================
+        function loadProgress() {
+            const savedProgress = localStorage.getItem('flashcardProgress');
+            if (savedProgress) {
+                const progress = JSON.parse(savedProgress);
+                knownCards = progress.knownCards || [];
+                streak = progress.streak || 0;
+                sessionCount = progress.sessionCount || 0;
+                totalCorrect = progress.totalCorrect || 0;
+                totalReviews = progress.totalReviews || 0;
+                studyTime = progress.studyTime || 0;
+                darkMode = progress.darkMode || false;
+                
+                // Apply dark mode if enabled
+                if (darkMode) {
+                    document.body.classList.add('dark-mode');
+                    themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+                }
+            }
+        }
+
+        function saveProgress() {
+            localStorage.setItem('flashcardProgress', JSON.stringify({
+                knownCards,
+                streak,
+                sessionCount,
+                totalCorrect,
+                totalReviews,
+                studyTime,
+                darkMode,
+                lastReview: new Date().toISOString()
+            }));
+        }
+
+        // ======================
+        // UI Effects
+        // ======================
+        function toggleTheme() {
+            darkMode = !darkMode;
+            document.body.classList.toggle('dark-mode');
+            themeToggle.innerHTML = darkMode ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+            saveProgress();
+        }
+
+        function toggleDeckSelector() {
+            deckSelector.classList.toggle('show');
+            fabMenu.innerHTML = deckSelector.classList.contains('show') 
+                ? '<i class="fas fa-times"></i>' 
+                : '<i class="fas fa-ellipsis-h"></i>';
+        }
+
+        function showNotification(message) {
+            notificationText.textContent = message;
+            notification.classList.add('show');
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        function triggerConfetti() {
+            confettiCanvas.width = window.innerWidth;
+            confettiCanvas.height = window.innerHeight;
+            
+            if (window.confetti) {
+                confetti({
+                    particleCount: 200,
+                    spread: 80,
+                    origin: { y: 0.6 },
+                    colors: ['#6c5ce7', '#5649c0', '#a29bfe', '#00b894', '#d63031', '#fdcb6e'],
+                    shapes: ['circle', 'square'],
+                    scalar: 1.2
+                });
+            }
+        }
+
+        function animateElements() {
+            const elements = document.querySelectorAll('.animate-in');
+            elements.forEach((el, i) => {
+                el.style.animationDelay = `${i * 0.1 + 0.1}s`;
+            });
+        }
+
+        // ======================
+        // Utility Functions
+        // ======================
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function handleKeyPress(e) {
+            switch (e.key) {
+                case ' ':
+                case 'Enter':
+                    e.preventDefault();
+                    toggleFlip();
+                    break;
+                case 'ArrowRight':
+                    nextBtn.click();
+                    break;
+                case 'ArrowLeft':
+                    prevBtn.click();
+                    break;
+                case 'Escape':
+                    if (deckSelector.classList.contains('show')) {
+                        toggleDeckSelector();
+                    }
+                    if (settingsModal.classList.contains('show')) {
+                        closeSettingsModal();
+                    }
+                    break;
+            }
+        }
+
+        // ======================
+        // Initialize the app
+        // ======================
+        window.onload = function() {
+            // Load confetti library dynamically
+            const confettiScript = document.createElement('script');
+            confettiScript.src = 'https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js';
+            confettiScript.onload = () => { window.confetti = window.confetti || confetti; };
+            document.head.appendChild(confettiScript);
+            
+            // Initialize the app
+            init();
+        };
+    </script>
+</body>
+</html>
